@@ -1,2 +1,2 @@
-# timesheety
+# Timesheety
 Simple Countdown Online
