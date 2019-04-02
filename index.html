@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link href="https://fonts.googleapis.com/css?family=Major+Mono+Display" rel="stylesheet">
+    <style>
+        *{margin: 0;padding: 0;box-sizing: border-box;}
+        body, html{min-height: 100vh;}
+        body{background-image: radial-gradient(at center, #251c31, #000);background-position: 50% 50%;background-size: 100vw 100vw;display: flex;align-items: center;justify-content: center;text-align: center;}
+        .clockdown__input{text-align: center;;background-color: transparent;border-style: none;color: #fff;font-family: 'Major Mono Display', monospace;font-size: 130px;width: 98%;margin-bottom: 16px;padding: 8px;text-shadow: 0 0 10px #fff;}
+        .clockdown__button{font-family: 'Major Mono Display', monospace;background-color: transparent;border: 1px solid #fff;color: #fff;border-radius: 4px;padding: 10px 25px;font-size: 24px;box-shadow: 0 0 10px #fff;text-shadow: 0 0 10px #fff;}
+        .clockdown__button:disabled{opacity: 0.4;}
+        .clockdown__button:enabled{cursor: pointer;}
+    </style>
+    <title>Timesheety</title>
+</head>
+<body>
+    <div class="clockdown">
+        <audio id="ClockdownAudio">
+            <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
+        </audio>
+        <input class="clockdown__input" type="text" name="ClockdownInput" id="ClockdownInput" placeholder="00:00:00:000" value="00:00:05:100" data-mask="99:99:99:999" data-mask-reverse>
+        <div class="clockdown__control">
+            <button id="ClockdownPlay" class="clockdown__button clockdown__button--play">Play</button>
+            <button id="ClockdownPause" class="clockdown__button clockdown__button--pause" disabled="disabled">Pause</button>
+        </div>
+    </div>
+    <script>
+        const numberToString = (number, pad = 2) => Number(number).toString().padStart(pad, 0);
+        window.ClockdownPlay.addEventListener('click', (e) => {
+            const clock = window.ClockdownInput.value.split(':');
+            let hours = Number(clock[0]);
+            let minutes = Number(clock[1]);
+            let secounds = Number(clock[2]);
+            let milliseconds = Number(clock[3]);
+            window.ClockdownPlay.disabled = 'disabled';
+            window.ClockdownPause.removeAttribute('disabled');
+            window.ClockdownInput.disabled = 'disabled';
+            clearInterval(window.ClockdownTimeout);
+            window.ClockdownTimeout = setInterval(() => {
+                milliseconds--;
+                window.ClockdownInput.value = `${numberToString(hours)}:${numberToString(minutes)}:${numberToString(secounds)}:${numberToString(milliseconds, 3)}`;
+                if (secounds <= 0 && minutes <= 0 && hours <= 0 && milliseconds <= 0) {
+                    clearInterval(window.ClockdownTimeout);
+                    window.ClockdownPause.disabled = 'disabled';
+                    window.ClockdownInput.removeAttribute('disabled');
+                    window.ClockdownAudio.play();
+                    return window.ClockdownInput.value = `00:00:00:000`;
+                }
+                if (minutes === 0 && secounds === 0 && milliseconds === 0) {
+                    hours--;
+                    minutes = 60;
+                }
+                if (secounds === 0 && milliseconds === 0) {
+                    minutes--;
+                    secounds = 60;
+                }
+                if (milliseconds <= 0) {
+                    secounds--;
+                    milliseconds = 100;
+                }
+            }, 10);
+        });
+        window.ClockdownPause.addEventListener('click', (e) => {
+            clearInterval(window.ClockdownTimeout);
+            window.ClockdownPause.disabled = 'disabled';
+            window.ClockdownPlay.removeAttribute('disabled');
+            window.ClockdownInput.removeAttribute('disabled');
+        });
+        window.ClockdownInput.addEventListener('focus', (e) => {
+            if (window.ClockdownPlay.hasAttribute('disabled') && window.ClockdownPause.hasAttribute('disabled')) {
+                window.ClockdownPlay.removeAttribute('disabled');
+            }
+        });
+
+        window.ClockdownInput.addEventListener('keyup', (e) => {
+            let valueCount = 0;
+            const { target } = e;
+            const mask = target.getAttribute('data-mask');
+            const valueArray = target.value.replace(/\D/g, '').split('');
+            const valueFinal = [];
+            const maskArray = mask.split('');
+            if (target.hasAttribute('data-mask-reverse')) {
+                const maskArrayReverse = maskArray;
+                const valueArrayReverse = valueArray;
+                maskArrayReverse.reverse();
+                valueArrayReverse.reverse();
+                maskArrayReverse.forEach((item, i) => {
+                    if (valueArrayReverse[i - valueCount]) {
+                        if (/\D/.test(item)) {
+                            valueFinal.push(item);
+                            valueCount++;
+                        } else {
+                            valueFinal.push(valueArrayReverse[i - valueCount]);
+                        }
+                    }
+                });
+                valueFinal.reverse();
+            } else {
+                maskArray.forEach((item) => {
+                    if (valueCount < valueArray.length) {
+                        if (/\D/.test(item)) {
+                            valueFinal.push(item);
+                        } else {
+                            valueFinal.push(valueArray[valueCount]);
+                            valueCount++;
+                        }
+                    }
+                });
+            }
+            target.value = valueFinal.join('');
+        });
+    </script>
+</body>
+</html>
